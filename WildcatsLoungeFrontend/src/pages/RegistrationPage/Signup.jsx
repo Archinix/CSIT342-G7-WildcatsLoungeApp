@@ -13,7 +13,6 @@ function Signup() {
   const [passwordRequirements, setPasswordRequirements] = useState({
     length: false,
     uppercase: false,
-    lowercase: false,
     number: false,
     special: false,
   })
@@ -22,17 +21,24 @@ function Signup() {
     setPasswordRequirements({
       length: pwd.length >= 8,
       uppercase: /[A-Z]/.test(pwd),
-      lowercase: /[a-z]/.test(pwd),
       number: /[0-9]/.test(pwd),
       special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
     })
+  }
+
+  const strengthScore = Object.values(passwordRequirements).filter(Boolean).length
+
+  const getStrengthLabel = () => {
+    if (!password) return 'Too weak'
+    if (strengthScore <= 1) return 'Weak'
+    if (strengthScore <= 3) return 'Medium'
+    return 'Strong'
   }
 
   const isPasswordValid = (pwd) => {
     return (
       pwd.length >= 8 &&
       /[A-Z]/.test(pwd) &&
-      /[a-z]/.test(pwd) &&
       /[0-9]/.test(pwd) &&
       /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
     )
@@ -113,9 +119,9 @@ function Signup() {
         
         console.log('Registration successful:', data.user)
         
-        // Redirect to dashboard
+        // Redirect to menu
         setTimeout(() => {
-          window.location.href = '/dashboard'
+          window.location.href = '/menu'
         }, 500)
       } else if (response.status === 409) {
         setErrors({ submit: data.message || 'Email already registered. Please use a different email.' })
@@ -201,37 +207,43 @@ function Signup() {
             {errors.password && <span className="error-message">{errors.password}</span>}
             
             {password && (
-              <div className="password-requirements">
-                <p className="requirements-title">Password Requirements:</p>
-                <div className="requirement-item">
-                  <span className={passwordRequirements.length ? 'requirement-met' : 'requirement-unmet'}>
-                    {passwordRequirements.length ? '✓' : '✗'}
+              <div className="password-hint-panel">
+                <div className="password-meter-header">
+                  <div className="password-meter-track">
+                    <span
+                      className={`password-meter-fill strength-${getStrengthLabel().toLowerCase()}`}
+                      style={{ width: `${(strengthScore / 4) * 100}%` }}
+                    />
+                  </div>
+                  <span className={`strength-label strength-${getStrengthLabel().toLowerCase()}`}>
+                    {getStrengthLabel()}
                   </span>
-                  <span>At least 8 characters</span>
                 </div>
-                <div className="requirement-item">
-                  <span className={passwordRequirements.uppercase ? 'requirement-met' : 'requirement-unmet'}>
-                    {passwordRequirements.uppercase ? '✓' : '✗'}
-                  </span>
-                  <span>At least one uppercase letter (A-Z)</span>
-                </div>
-                <div className="requirement-item">
-                  <span className={passwordRequirements.lowercase ? 'requirement-met' : 'requirement-unmet'}>
-                    {passwordRequirements.lowercase ? '✓' : '✗'}
-                  </span>
-                  <span>At least one lowercase letter (a-z)</span>
-                </div>
-                <div className="requirement-item">
-                  <span className={passwordRequirements.number ? 'requirement-met' : 'requirement-unmet'}>
-                    {passwordRequirements.number ? '✓' : '✗'}
-                  </span>
-                  <span>At least one number (0-9)</span>
-                </div>
-                <div className="requirement-item">
-                  <span className={passwordRequirements.special ? 'requirement-met' : 'requirement-unmet'}>
-                    {passwordRequirements.special ? '✓' : '✗'}
-                  </span>
-                  <span>At least one special character (!@#$%^&*)</span>
+                <div className="requirement-inline-grid">
+                  <div className="requirement-inline-item">
+                    <span className={passwordRequirements.length ? 'requirement-dot met' : 'requirement-dot'}>
+                      {passwordRequirements.length ? '✓' : '○'}
+                    </span>
+                    <span>At least 8 characters</span>
+                  </div>
+                  <div className="requirement-inline-item">
+                    <span className={passwordRequirements.uppercase ? 'requirement-dot met' : 'requirement-dot'}>
+                      {passwordRequirements.uppercase ? '✓' : '○'}
+                    </span>
+                    <span>One uppercase letter</span>
+                  </div>
+                  <div className="requirement-inline-item">
+                    <span className={passwordRequirements.number ? 'requirement-dot met' : 'requirement-dot'}>
+                      {passwordRequirements.number ? '✓' : '○'}
+                    </span>
+                    <span>One number</span>
+                  </div>
+                  <div className="requirement-inline-item">
+                    <span className={passwordRequirements.special ? 'requirement-dot met' : 'requirement-dot'}>
+                      {passwordRequirements.special ? '✓' : '○'}
+                    </span>
+                    <span>One special character</span>
+                  </div>
                 </div>
               </div>
             )}

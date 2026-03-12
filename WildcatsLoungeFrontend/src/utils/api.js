@@ -21,7 +21,9 @@ export const apiCall = async (endpoint, options = {}) => {
       headers,
     })
 
-    const data = await response.json()
+    const contentType = response.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+    const data = isJson ? await response.json() : await response.text()
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -31,7 +33,8 @@ export const apiCall = async (endpoint, options = {}) => {
         localStorage.removeItem('user')
         window.location.href = '/login'
       }
-      throw new Error(data.message || 'API request failed')
+      const message = typeof data === 'string' ? data : data.message
+      throw new Error(message || 'API request failed')
     }
 
     return data

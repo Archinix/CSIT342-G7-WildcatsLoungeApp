@@ -1,5 +1,7 @@
 package com.sysintegg7.abatayo.wildcatslounge.LoginPage;
 
+import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
+import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository;
 import com.sysintegg7.abatayo.wildcatslounge.auth.AuthResponse;
 import com.sysintegg7.abatayo.wildcatslounge.auth.JwtTokenProvider;
 import com.sysintegg7.abatayo.wildcatslounge.auth.UserInfo;
@@ -11,6 +13,9 @@ import java.util.Optional;
 
 @Service
 public class LoginService {
+
+    @Autowired
+    private RegisterRepository registerRepository;
     
     @Autowired
     private LoginRepository loginRepository;
@@ -22,17 +27,17 @@ public class LoginService {
     private JwtTokenProvider jwtTokenProvider;
     
     public AuthResponse authenticate(LoginDTO loginDTO) {
-        Optional<LoginEntity> user = loginRepository.findByEmail(loginDTO.getEmail());
+        Optional<RegisterEntity> user = registerRepository.findByEmail(loginDTO.getEmail());
         
         if (user.isPresent() && passwordEncoder.matches(loginDTO.getPassword(), user.get().getPassword())) {
-            LoginEntity loginEntity = user.get();
-            
-            // Update last login
-            loginEntity.setLastLogin(String.valueOf(System.currentTimeMillis()));
-            loginRepository.save(loginEntity);
+            RegisterEntity loginEntity = user.get();
             
             // Generate JWT tokens
-            String accessToken = jwtTokenProvider.generateAccessToken(loginEntity.getId(), loginEntity.getEmail());
+            String accessToken = jwtTokenProvider.generateAccessToken(
+                loginEntity.getId(),
+                loginEntity.getEmail(),
+                loginEntity.getRole()
+            );
             String refreshToken = jwtTokenProvider.generateRefreshToken(loginEntity.getId(), loginEntity.getEmail());
             
             return AuthResponse.builder()
@@ -52,7 +57,7 @@ public class LoginService {
     }
     
     public LoginDTO findByEmail(String email) {
-        Optional<LoginEntity> user = loginRepository.findByEmail(email);
+        Optional<RegisterEntity> user = registerRepository.findByEmail(email);
         return user.map(this::convertToDTO).orElse(null);
     }
     
@@ -63,27 +68,40 @@ public class LoginService {
             LoginEntity loginEntity = user.get();
             loginEntity.setLastLogin(String.valueOf(System.currentTimeMillis()));
             loginRepository.save(loginEntity);
-            return convertToDTO(loginEntity);
+            return convertLegacyToDTO(loginEntity);
         }
         
         return null;
     }
     
-    private LoginDTO convertToDTO(LoginEntity loginEntity) {
+    private LoginDTO convertToDTO(RegisterEntity loginEntity) {
         return new LoginDTO(
             loginEntity.getEmail(),
             loginEntity.getPassword(),
             loginEntity.getId(),
             loginEntity.getCreatedAt(),
-            loginEntity.getLastLogin()
+            null
         );
     }
 
-    private UserInfo convertToUserInfo(LoginEntity loginEntity) {
+    private LoginDTO convertLegacyToDTO(LoginEntity loginEntity) {
+        return new LoginDTO(
+                loginEntity.getEmail(),
+                loginEntity.getPassword(),
+                loginEntity.getId(),
+                loginEntity.getCreatedAt(),
+                loginEntity.getLastLogin()
+        );
+    }
+
+    private UserInfo convertToUserInfo(RegisterEntity loginEntity) {
         return UserInfo.builder()
                 .id(loginEntity.getId())
                 .email(loginEntity.getEmail())
-                .role("CUSTOMER")
+                .firstName(loginEntity.getFirstName())
+                .lastName(loginEntity.getLastName())
+                .fullName(loginEntity.getFirstName() + " " + loginEntity.getLastName())
+                .role(loginEntity.getRole() == null || loginEntity.getRole().isBlank() ? "CUSTOMER" : loginEntity.getRole())
                 .createdAt(loginEntity.getCreatedAt())
                 .build();
     }

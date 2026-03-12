@@ -1,8 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Login.css'
 import logo from '../../assets/logo/logo.jpg'
+import { useAuth } from '../../context/useAuth'
 
 function Login() {
+  const navigate = useNavigate()
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -39,7 +43,6 @@ function Login() {
     return (
       pwd.length >= 8 &&
       /[A-Z]/.test(pwd) &&
-      /[a-z]/.test(pwd) &&
       /[0-9]/.test(pwd) &&
       /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
     )
@@ -66,17 +69,11 @@ function Login() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        // Store JWT tokens and user info
-        localStorage.setItem('accessToken', data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        console.log('Login successful:', data.user)
-        
-        // Redirect to dashboard
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 500)
+        login(data.user, {
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        })
+        navigate('/menu')
       } else {
         setErrors({ submit: data.message || 'Invalid email or password' })
       }

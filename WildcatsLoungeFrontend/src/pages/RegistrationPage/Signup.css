@@ -199,51 +199,98 @@
   transform: none;
 }
 
-/* Password Requirements Styles */
-.password-requirements {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 12px;
-  margin-top: 8px;
-  font-size: 12px;
+/* Password Strength + Requirements */
+.password-hint-panel {
+  margin-top: 10px;
+  padding: 10px 12px 4px;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+  background: #fbfcff;
 }
 
-.requirements-title {
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 8px 0;
-  font-size: 12px;
-}
-
-.requirement-item {
+.password-meter-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  color: #666;
-  font-size: 12px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-.requirement-item:last-child {
-  margin-bottom: 0;
+.password-meter-track {
+  height: 5px;
+  flex: 1;
+  background: #e9edf4;
+  border-radius: 999px;
+  overflow: hidden;
 }
 
-.requirement-met,
-.requirement-unmet {
-  font-weight: bold;
-  min-width: 16px;
+.password-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.strength-label {
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 52px;
+  text-align: right;
+  letter-spacing: 0.2px;
+}
+
+.password-meter-fill.strength-weak {
+  background: #d32f2f;
+}
+
+.strength-label.strength-weak {
+  color: #d32f2f;
+}
+
+.password-meter-fill.strength-medium {
+  background: #f59e0b;
+}
+
+.strength-label.strength-medium {
+  color: #b26a00;
+}
+
+.password-meter-fill.strength-strong {
+  background: #2563eb;
+}
+
+.strength-label.strength-strong {
+  color: #2563eb;
+}
+
+.requirement-inline-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  padding-bottom: 4px;
+}
+
+.requirement-inline-item {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6f7786;
 }
 
-.requirement-met {
-  color: #4caf50;
+.requirement-dot {
+  color: #b9c1ce;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.requirement-unmet {
-  color: #f44336;
+.requirement-dot.met {
+  color: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .requirement-inline-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {

@@ -37,6 +37,9 @@ public class RegisterEntity {
     @NotBlank(message = "Password is required")
     @ValidPassword
     private String password;
+
+    @Column
+    private String role = "CUSTOMER";
     
     @Column(name = "created_at")
     private String createdAt;

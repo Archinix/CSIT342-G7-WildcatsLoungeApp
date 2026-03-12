@@ -32,13 +32,14 @@ public class RegisterService {
         
         RegisterEntity registerEntity = convertToEntity(registerDTO);
         registerEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        registerEntity.setRole("CUSTOMER");
         // Hash password with BCrypt
         registerEntity.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         
         RegisterEntity savedEntity = registerRepository.save(registerEntity);
         
         // Generate JWT tokens
-        String accessToken = jwtTokenProvider.generateAccessToken(savedEntity.getId(), savedEntity.getEmail());
+        String accessToken = jwtTokenProvider.generateAccessToken(savedEntity.getId(), savedEntity.getEmail(), savedEntity.getRole());
         String refreshToken = jwtTokenProvider.generateRefreshToken(savedEntity.getId(), savedEntity.getEmail());
         
         return AuthResponse.builder()
@@ -94,19 +95,19 @@ public class RegisterService {
                 .firstName(registerEntity.getFirstName())
                 .lastName(registerEntity.getLastName())
                 .fullName(registerEntity.getFirstName() + " " + registerEntity.getLastName())
-                .role("CUSTOMER")
+                .role(registerEntity.getRole() == null || registerEntity.getRole().isBlank() ? "CUSTOMER" : registerEntity.getRole())
                 .createdAt(registerEntity.getCreatedAt())
                 .build();
     }
     
     private RegisterEntity convertToEntity(RegisterDTO registerDTO) {
-        return new RegisterEntity(
-            null,
-            registerDTO.getFirstName(),
-            registerDTO.getLastName(),
-            registerDTO.getEmail(),
-            registerDTO.getPassword(),
-            null
-        );
+        RegisterEntity entity = new RegisterEntity();
+        entity.setFirstName(registerDTO.getFirstName());
+        entity.setLastName(registerDTO.getLastName());
+        entity.setEmail(registerDTO.getEmail());
+        entity.setPassword(registerDTO.getPassword());
+        entity.setRole("CUSTOMER");
+        entity.setCreatedAt(null);
+        return entity;
     }
 }
