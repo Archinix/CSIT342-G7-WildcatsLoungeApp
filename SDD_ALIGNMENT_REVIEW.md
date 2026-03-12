@@ -14,6 +14,63 @@
 
 Your current implementation has successfully completed the foundational authentication framework but lacks the core feature implementations (Menu, Cart, Orders, Loyalty) specified in the SDD. The architecture and coding patterns are sound, but you're only at the beginning of Phase 2 (Backend Development) when you should be transitioning to Phase 3 (Web Application).
 
+### March 12, 2026 Update (Delta)
+
+This review is now partially outdated. Based on the current codebase, major Phase 2/3 items previously marked "NOT STARTED" are now implemented.
+
+#### A. Previously Lacking, Now Implemented
+
+- Product system is implemented:
+   - `GET /products`
+   - `GET /products/{id}`
+   - `POST /admin/products`
+   - `PATCH /admin/products/{id}`
+   - Files present under `WildcatsLoungeBackend/abatayo/src/main/java/com/sysintegg7/abatayo/wildcatslounge/product`
+- Cart system is implemented:
+   - `GET /cart`
+   - `POST /cart/items`
+   - `DELETE /cart/items/{id}`
+   - Files present under `WildcatsLoungeBackend/abatayo/src/main/java/com/sysintegg7/abatayo/wildcatslounge/cart`
+- Order system is implemented (core flows):
+   - `POST /orders`
+   - `GET /orders`
+   - `GET /orders/active`
+   - Files present under `WildcatsLoungeBackend/abatayo/src/main/java/com/sysintegg7/abatayo/wildcatslounge/order`
+- Loyalty system is implemented (core flows):
+   - `GET /loyalty/status`
+   - `POST /loyalty/redeem`
+   - Files present under `WildcatsLoungeBackend/abatayo/src/main/java/com/sysintegg7/abatayo/wildcatslounge/loyalty`
+- Frontend pages and routing are implemented for:
+   - Menu, Cart, Orders, Loyalty, Dashboard, Admin menu management, Superadmin admin-account creation
+   - See `WildcatsLoungeFrontend/src/App.jsx` and `WildcatsLoungeFrontend/src/pages`
+- Role-based access is now enforced in backend and frontend:
+   - Backend route policies in `WildcatsLoungeBackend/abatayo/src/main/java/com/sysintegg7/abatayo/wildcatslounge/config/SecurityConfig.java`
+   - Frontend role-gated routes via `ProtectedRoute` in `WildcatsLoungeFrontend/src/App.jsx`
+
+#### B. Still Lacking vs SDD (Current Gaps)
+
+- `PATCH /staff/orders/{id}` is still missing (staff status update endpoint).
+- `GET /vouchers/my-vouchers` is still missing.
+- WebSocket realtime updates (`/topic/orders/{userId}`) are still missing.
+- Coupon persistence model appears missing (`CouponEntity`/coupon table not found in current backend package set).
+- Refresh token persistence model appears missing (`RefreshToken` entity/table not found; token generation exists but no entity/repository).
+- TypeScript migration is still pending (frontend remains JSX).
+
+#### C. Added in Codebase but Not Explicitly Covered in This Review
+
+- Password recovery endpoints:
+   - `POST /auth/forgot-password`
+   - `POST /auth/reset-password`
+- Superadmin bootstrap/config support (`SuperAdminBootstrap`) and dedicated superadmin account-creation API:
+   - `POST /admin/superadmin/accounts/admins`
+- Product search implemented through query param on `GET /products?search=...`
+- Auth responses include refresh token payload fields, even though DB-backed refresh-token storage is not yet present.
+
+#### D. Revised Alignment Snapshot (March 12)
+
+- Estimated overall alignment is now closer to ~80-85% for implemented web scope.
+- Primary blockers to near-100% Phase 2/3 alignment are staff order-status updates, vouchers/coupon flow, and realtime notifications.
+
 ---
 
 ## SECTION 1: COMPLETED & ALIGNED ✓
