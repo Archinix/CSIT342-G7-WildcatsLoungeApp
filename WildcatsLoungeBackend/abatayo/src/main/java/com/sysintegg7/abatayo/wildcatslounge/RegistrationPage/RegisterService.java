@@ -1,13 +1,16 @@
 package com.sysintegg7.abatayo.wildcatslounge.RegistrationPage;
 
-import com.sysintegg7.abatayo.wildcatslounge.auth.AuthResponse;
-import com.sysintegg7.abatayo.wildcatslounge.auth.JwtTokenProvider;
-import com.sysintegg7.abatayo.wildcatslounge.auth.UserInfo;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import com.sysintegg7.abatayo.wildcatslounge.auth.AuthResponse;
+import com.sysintegg7.abatayo.wildcatslounge.auth.JwtTokenProvider;
+import com.sysintegg7.abatayo.wildcatslounge.auth.SupabaseAuthResult;
+import com.sysintegg7.abatayo.wildcatslounge.auth.SupabaseAuthService;
+import com.sysintegg7.abatayo.wildcatslounge.auth.UserInfo;
 
 @Service
 public class RegisterService {
@@ -20,6 +23,9 @@ public class RegisterService {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private SupabaseAuthService supabaseAuthService;
     
     public AuthResponse register(RegisterDTO registerDTO) {
         // Check if email already exists
@@ -28,6 +34,23 @@ public class RegisterService {
                     .success(false)
                     .message("Email already registered")
                     .build();
+        }
+
+        SupabaseAuthResult supabaseResult = null;
+        if (supabaseAuthService.isConfigured()) {
+            supabaseResult = supabaseAuthService.signUp(
+                registerDTO.getEmail(),
+                registerDTO.getPassword(),
+                registerDTO.getFirstName(),
+                registerDTO.getLastName()
+            );
+
+            if (!supabaseResult.isSuccess()) {
+            return AuthResponse.builder()
+                .success(false)
+                .message("Registration failed in database auth module")
+                .build();
+            }
         }
         
         RegisterEntity registerEntity = convertToEntity(registerDTO);
@@ -38,9 +61,19 @@ public class RegisterService {
         
         RegisterEntity savedEntity = registerRepository.save(registerEntity);
         
-        // Generate JWT tokens
-        String accessToken = jwtTokenProvider.generateAccessToken(savedEntity.getId(), savedEntity.getEmail(), savedEntity.getRole());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(savedEntity.getId(), savedEntity.getEmail());
+        String accessToken;
+        String refreshToken;
+        long expiresIn;
+
+        if (supabaseResult != null && supabaseResult.isSuccess()) {
+            accessToken = supabaseResult.getAccessToken();
+            refreshToken = supabaseResult.getRefreshToken();
+            expiresIn = supabaseResult.getExpiresIn();
+        } else {
+            accessToken = jwtTokenProvider.generateAccessToken(savedEntity.getId(), savedEntity.getEmail(), savedEntity.getRole());
+            refreshToken = jwtTokenProvider.generateRefreshToken(savedEntity.getId(), savedEntity.getEmail());
+            expiresIn = jwtTokenProvider.getExpirationTime();
+        }
         
         return AuthResponse.builder()
                 .success(true)
@@ -48,7 +81,7 @@ public class RegisterService {
                 .user(convertToUserInfo(savedEntity))
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .expiresIn(jwtTokenProvider.getExpirationTime())
+                .expiresIn(expiresIn)
                 .build();
     }
     
@@ -77,15 +110,34 @@ public class RegisterService {
         return null;
     }
     
+    public RegisterDTO updateUserProfile(Long id, UpdateProfileDTO updateProfileDTO) {
+        Optional<RegisterEntity> user = registerRepository.findById(id);
+        
+        if (user.isPresent()) {
+            RegisterEntity registerEntity = user.get();
+            registerEntity.setFirstName(updateProfileDTO.getFirstName());
+            registerEntity.setLastName(updateProfileDTO.getLastName());
+            
+            RegisterEntity savedEntity = registerRepository.save(registerEntity);
+            return convertToDTO(savedEntity);
+        }
+        
+        return null;
+    }
+    
     private RegisterDTO convertToDTO(RegisterEntity registerEntity) {
-        return new RegisterDTO(
+        RegisterDTO dto = new RegisterDTO(
             registerEntity.getFirstName(),
             registerEntity.getLastName(),
             registerEntity.getEmail(),
             registerEntity.getPassword(),
             registerEntity.getId(),
-            registerEntity.getCreatedAt()
+            registerEntity.getCreatedAt(),
+            null, // photoData - don't include in DTO
+            registerEntity.getPhotoFilename(),
+            registerEntity.getPhotoMimeType()
         );
+        return dto;
     }
 
     private UserInfo convertToUserInfo(RegisterEntity registerEntity) {
@@ -109,5 +161,48 @@ public class RegisterService {
         entity.setRole("CUSTOMER");
         entity.setCreatedAt(null);
         return entity;
+    }
+    
+    public boolean changePassword(Long id, String currentPassword, String newPassword) {
+        Optional<RegisterEntity> user = registerRepository.findById(id);
+        
+        if (user.isPresent()) {
+            RegisterEntity registerEntity = user.get();
+            
+            // Verify current password
+            if (passwordEncoder.matches(currentPassword, registerEntity.getPassword())) {
+                // Update with new password
+                registerEntity.setPassword(passwordEncoder.encode(newPassword));
+                registerRepository.save(registerEntity);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    public boolean uploadPhoto(Long id, byte[] photoData, String filename, String mimeType) {
+        Optional<RegisterEntity> user = registerRepository.findById(id);
+        
+        if (user.isPresent()) {
+            RegisterEntity registerEntity = user.get();
+            registerEntity.setPhotoData(photoData);
+            registerEntity.setPhotoFilename(filename);
+            registerEntity.setPhotoMimeType(mimeType);
+            registerRepository.save(registerEntity);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    public byte[] getPhoto(Long id) {
+        Optional<RegisterEntity> user = registerRepository.findById(id);
+        
+        if (user.isPresent()) {
+            return user.get().getPhotoData();
+        }
+        
+        return null;
     }
 }

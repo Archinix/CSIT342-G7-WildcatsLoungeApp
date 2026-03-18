@@ -1,9 +1,10 @@
 import { NavLink, Link } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import logo from '../assets/logo/logo.jpg'
+import ProfileDropdown from './ProfileDropdown'
 
 function AppShell({ title, subtitle, children, rightContent }) {
-  const { logout, user } = useAuth()
+  const { user } = useAuth()
   const isAdmin = user?.role === 'ADMIN'
   const isSuperAdmin = user?.role === 'SUPERADMIN'
   const canManageMenu = isAdmin || isSuperAdmin
@@ -36,12 +37,7 @@ function AppShell({ title, subtitle, children, rightContent }) {
             </svg>
             <span className="wl-notification-dot">2</span>
           </Link>
-          <button type="button" className="wl-icon-btn" onClick={logout} aria-label="Logout profile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.5" />
-              <path d="M5 20c1.6-3.4 4-5 7-5s5.4 1.6 7 5" />
-            </svg>
-          </button>
+          <ProfileDropdown />
         </div>
       </header>
 

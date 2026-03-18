@@ -1,11 +1,19 @@
 package com.sysintegg7.abatayo.wildcatslounge.RegistrationPage;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import com.sysintegg7.abatayo.wildcatslounge.validation.ValidPassword;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.sysintegg7.abatayo.wildcatslounge.validation.ValidPassword;
 
 @Entity
 @Table(name = "register")
@@ -43,4 +51,13 @@ public class RegisterEntity {
     
     @Column(name = "created_at")
     private String createdAt;
+
+    @Column(name = "photo_data")
+    private byte[] photoData;
+
+    @Column(name = "photo_filename")
+    private String photoFilename;
+
+    @Column(name = "photo_mime_type")
+    private String photoMimeType;
 }

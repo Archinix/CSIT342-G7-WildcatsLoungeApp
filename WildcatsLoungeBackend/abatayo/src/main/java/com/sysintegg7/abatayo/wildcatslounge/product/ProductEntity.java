@@ -41,7 +41,6 @@ public class ProductEntity {
     @Column(nullable = false)
     private boolean available;
 
-    @Lob
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 }

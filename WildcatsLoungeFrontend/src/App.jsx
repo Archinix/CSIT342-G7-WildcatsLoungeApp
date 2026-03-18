@@ -11,6 +11,8 @@ import Orders from './pages/OrdersPage/Orders'
 import Loyalty from './pages/LoyaltyPage/Loyalty'
 import CreateAdminAccount from './pages/AdminPage/CreateAdminAccount'
 import MenuManagement from './pages/AdminPage/MenuManagement'
+import Profile from './pages/ProfilePage/Profile'
+import ChangePassword from './pages/ProfilePage/ChangePassword'
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/loyalty" element={<ProtectedRoute><Loyalty /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
           <Route
             path="/admin/create-account"
             element={
