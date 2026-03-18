@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiCall } from '../../utils/api'
+import { apiCall, apiGetCached } from '../../utils/api'
 import AppShell from '../../components/AppShell'
 
 const ADD_ON_OPTIONS = [
@@ -21,7 +21,7 @@ function Menu() {
     setError('')
 
     try {
-      const data = await apiCall('/products')
+      const data = await apiGetCached('/products', { ttlMs: 60000 })
       setProducts(Array.isArray(data) ? data : [])
     } catch (err) {
       setProducts([])

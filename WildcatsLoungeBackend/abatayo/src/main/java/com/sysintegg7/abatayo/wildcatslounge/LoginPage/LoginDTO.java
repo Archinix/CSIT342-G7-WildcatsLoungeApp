@@ -1,10 +1,13 @@
 package com.sysintegg7.abatayo.wildcatslounge.LoginPage;
 
-import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sysintegg7.abatayo.wildcatslounge.validation.ValidPassword;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.sysintegg7.abatayo.wildcatslounge.validation.ValidPassword;
 
 @Data
 @NoArgsConstructor
@@ -17,6 +20,7 @@ public class LoginDTO {
     
     @NotBlank(message = "Password is required")
     @ValidPassword
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     
     private Long id;

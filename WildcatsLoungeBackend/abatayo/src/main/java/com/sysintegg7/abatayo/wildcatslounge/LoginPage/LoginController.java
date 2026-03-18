@@ -1,11 +1,20 @@
 package com.sysintegg7.abatayo.wildcatslounge.LoginPage;
 
-import com.sysintegg7.abatayo.wildcatslounge.auth.AuthResponse;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.sysintegg7.abatayo.wildcatslounge.auth.AuthResponse;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
@@ -31,7 +40,7 @@ public class LoginController {
         return ResponseEntity.ok(new AuthResponse(true, "Logout successful", null, null, null, 0));
     }
     
-    @GetMapping("/users/{email}")
+    @GetMapping("/login-users/{email}")
     public ResponseEntity<?> getByEmail(@PathVariable String email) {
         LoginDTO result = loginService.findByEmail(email);
         

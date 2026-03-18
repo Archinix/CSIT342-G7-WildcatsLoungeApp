@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiCall } from '../../utils/api'
+import { apiGetCached } from '../../utils/api'
 import AppShell from '../../components/AppShell'
 
 const STATUS_OPTIONS = ['All Status', 'Pending', 'Preparing', 'Ready for Pickup', 'Completed']
@@ -48,7 +48,7 @@ function Orders() {
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        const data = await apiCall('/orders')
+        const data = await apiGetCached('/orders', { ttlMs: 20000 })
         setOrders(Array.isArray(data) ? data : [])
       } catch (err) {
         setOrders([])

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
-import { apiCall } from '../../utils/api'
+import { apiCall, apiGetCached } from '../../utils/api'
 import AppShell from '../../components/AppShell'
 
 function Cart() {
   const [cart, setCart] = useState(null)
   const [error, setError] = useState('')
 
-  const loadCart = async () => {
+  const loadCart = async ({ forceRefresh = false } = {}) => {
     try {
-      const data = await apiCall('/cart')
+      const data = await apiGetCached('/cart', { ttlMs: 15000, forceRefresh })
       setCart(data)
       setError('')
     } catch (err) {
@@ -21,7 +21,7 @@ function Cart() {
 
     const initializeCart = async () => {
       try {
-        const data = await apiCall('/cart')
+        const data = await apiGetCached('/cart', { ttlMs: 15000 })
         if (active) {
           setCart(data)
           setError('')
@@ -43,7 +43,7 @@ function Cart() {
   const removeItem = async (id) => {
     try {
       await apiCall(`/cart/items/${id}`, { method: 'DELETE' })
-      await loadCart()
+      await loadCart({ forceRefresh: true })
     } catch (err) {
       setError(err.message || 'Failed to remove item')
     }
@@ -53,7 +53,7 @@ function Cart() {
     try {
       await apiCall('/orders', { method: 'POST' })
       alert('Order placed successfully')
-      await loadCart()
+      await loadCart({ forceRefresh: true })
     } catch (err) {
       setError(err.message || 'Checkout failed')
     }

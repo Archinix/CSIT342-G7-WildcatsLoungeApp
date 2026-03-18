@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiCall } from '../../utils/api'
+import { apiGetCached } from '../../utils/api'
 import AppShell from '../../components/AppShell'
 
 function Loyalty() {
@@ -11,7 +11,7 @@ function Loyalty() {
 
     const initializeStatus = async () => {
       try {
-        const data = await apiCall('/loyalty/status')
+        const data = await apiGetCached('/loyalty/status', { ttlMs: 20000 })
         if (active) {
           setStatus(data && typeof data === 'object' ? data : null)
           setError('')
