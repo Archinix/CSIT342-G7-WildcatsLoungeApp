@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/useAuth'
 import AppShell from '../../components/AppShell'
+import { apiCall, apiGetBlobUrlCached, invalidateApiCache } from '../../utils/api'
 import './Profile.css'
 
 function Profile() {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, updateUser } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [photoPreview, setPhotoPreview] = useState(null)
+  const [photoUrl, setPhotoUrl] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null)
 
   const [formData, setFormData] = useState({
@@ -26,6 +28,36 @@ function Profile() {
       })
     }
   }, [user])
+
+  useEffect(() => {
+    let active = true
+
+    const loadPhoto = async () => {
+      if (!user?.id) {
+        if (active) {
+          setPhotoUrl(null)
+        }
+        return
+      }
+
+      try {
+        const url = await apiGetBlobUrlCached(`/auth/users/${user.id}/photo`, { ttlMs: 120000 })
+        if (active) {
+          setPhotoUrl(url)
+        }
+      } catch {
+        if (active) {
+          setPhotoUrl(null)
+        }
+      }
+    }
+
+    void loadPhoto()
+
+    return () => {
+      active = false
+    }
+  }, [user?.id])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -53,47 +85,46 @@ function Profile() {
 
     try {
       // Update profile information
-      const response = await fetch(`http://localhost:8080/auth/users/${user.id}`, {
+      const updatedProfile = await apiCall(`/auth/users/${user.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName
         })
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile')
+      if (updatedProfile && typeof updatedProfile === 'object') {
+        updateUser({
+          firstName: updatedProfile.firstName,
+          lastName: updatedProfile.lastName,
+          fullName: `${updatedProfile.firstName || ''} ${updatedProfile.lastName || ''}`.trim(),
+        })
       }
+
+      invalidateApiCache(`/auth/users/${user.id}`)
 
       // Upload photo if selected
       if (selectedFile) {
         const formDataPhoto = new FormData()
         formDataPhoto.append('file', selectedFile)
 
-        const photoResponse = await fetch(`http://localhost:8080/auth/users/${user.id}/upload-photo`, {
+        await apiCall(`/auth/users/${user.id}/upload-photo`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          },
           body: formDataPhoto
         })
 
-        if (!photoResponse.ok) {
-          throw new Error('Failed to upload photo')
-        }
+        invalidateApiCache(`/auth/users/${user.id}/photo`)
+        const refreshedPhoto = await apiGetBlobUrlCached(`/auth/users/${user.id}/photo`, {
+          ttlMs: 120000,
+          forceRefresh: true,
+        })
+        setPhotoUrl(refreshedPhoto)
       }
 
       setMessage('Profile updated successfully!')
       setIsEditing(false)
       setSelectedFile(null)
       setPhotoPreview(null)
-
-      // Refresh user data
-      setTimeout(() => window.location.reload(), 1500)
     } catch (error) {
       setMessage(`Error: ${error.message}`)
     } finally {
@@ -135,7 +166,7 @@ function Profile() {
                 <div className="profile-photo-section">
                   <div className="profile-photo">
                     <img
-                      src={photoPreview || `http://localhost:8080/auth/users/${user?.id}/photo`}
+                      src={photoPreview || photoUrl || 'https://via.placeholder.com/120?text=User'}
                       alt="Profile"
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/120?text=User'
@@ -181,7 +212,7 @@ function Profile() {
                 <div className="profile-photo-upload">
                   <div className="photo-preview">
                     <img
-                      src={photoPreview || `http://localhost:8080/auth/users/${user?.id}/photo`}
+                      src={photoPreview || photoUrl || 'https://via.placeholder.com/120?text=User'}
                       alt="Profile Preview"
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/120?text=User'

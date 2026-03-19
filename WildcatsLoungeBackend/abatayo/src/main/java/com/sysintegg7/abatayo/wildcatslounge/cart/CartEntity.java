@@ -20,4 +20,14 @@ public class CartEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private RegisterEntity user;
+
+    @Column(name = "created_at", nullable = false)
+    private String createdAt;
+
+    @PrePersist
+    private void setCreatedAtIfMissing() {
+        if (createdAt == null || createdAt.isBlank()) {
+            createdAt = String.valueOf(System.currentTimeMillis());
+        }
+    }
 }

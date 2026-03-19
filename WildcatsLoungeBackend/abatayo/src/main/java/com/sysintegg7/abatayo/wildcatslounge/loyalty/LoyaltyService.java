@@ -29,13 +29,13 @@ public class LoyaltyService {
 
         LoyaltyPointsEntity pointsEntity = getOrCreatePoints(user);
         List<LoyaltyTransactionDTO> tx = loyaltyTransactionRepository
-                .findByLoyaltyPointsOrderByIdDesc(pointsEntity)
+            .findByUserOrderByIdDesc(user)
                 .stream()
                 .limit(20)
                 .map(t -> new LoyaltyTransactionDTO(
-                        t.getPointsDelta(),
+                t.getPointsEarned() - t.getPointsRedeemed(),
                         t.getTransactionType(),
-                        t.getNote(),
+                t.getPointsRedeemed() > 0 ? "Redeemed points" : "Points earned",
                         t.getCreatedAt()
                 ))
                 .toList();
@@ -57,14 +57,13 @@ public class LoyaltyService {
         pointsEntity.setPoints(pointsEntity.getPoints() - pointsToRedeem);
         loyaltyPointsRepository.save(pointsEntity);
 
-        LoyaltyTransactionEntity tx = new LoyaltyTransactionEntity(
-                null,
-                pointsEntity,
-                -pointsToRedeem,
-                "POINTS_REDEEMED",
-                "Redeemed points",
-                String.valueOf(System.currentTimeMillis())
-        );
+        LoyaltyTransactionEntity tx = new LoyaltyTransactionEntity();
+        tx.setUser(user);
+        tx.setOrder(null);
+        tx.setPointsEarned(0);
+        tx.setPointsRedeemed(pointsToRedeem);
+        tx.setTransactionType("POINTS_REDEEMED");
+        tx.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         loyaltyTransactionRepository.save(tx);
 
         return getStatus(email);
@@ -75,14 +74,13 @@ public class LoyaltyService {
         pointsEntity.setPoints(pointsEntity.getPoints() + points);
         loyaltyPointsRepository.save(pointsEntity);
 
-        LoyaltyTransactionEntity tx = new LoyaltyTransactionEntity(
-                null,
-                pointsEntity,
-                points,
-                type,
-                note,
-                String.valueOf(System.currentTimeMillis())
-        );
+        LoyaltyTransactionEntity tx = new LoyaltyTransactionEntity();
+        tx.setUser(user);
+        tx.setOrder(null);
+        tx.setPointsEarned(points);
+        tx.setPointsRedeemed(0);
+        tx.setTransactionType(type);
+        tx.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         loyaltyTransactionRepository.save(tx);
     }
 

@@ -90,7 +90,7 @@ public class CartService {
 
     public CartEntity getOrCreateCart(RegisterEntity user) {
         return cartRepository.findByUser(user)
-                .orElseGet(() -> cartRepository.save(new CartEntity(null, user)));
+                .orElseGet(() -> cartRepository.save(new CartEntity(null, user, String.valueOf(System.currentTimeMillis()))));
     }
 
     public List<CartItemEntity> getCartItems(CartEntity cart) {

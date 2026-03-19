@@ -1,5 +1,7 @@
 package com.sysintegg7.abatayo.wildcatslounge.loyalty;
 
+import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
+import com.sysintegg7.abatayo.wildcatslounge.order.OrderEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,17 +19,21 @@ public class LoyaltyTransactionEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "points_id", nullable = false)
-    private LoyaltyPointsEntity loyaltyPoints;
+    @JoinColumn(name = "user_id", nullable = false)
+    private RegisterEntity user;
 
-    @Column(nullable = false)
-    private Integer pointsDelta;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private OrderEntity order;
 
-    @Column(nullable = false)
+    @Column(name = "points_earned", nullable = false)
+    private Integer pointsEarned;
+
+    @Column(name = "points_redeemed", nullable = false)
+    private Integer pointsRedeemed;
+
+    @Column(name = "transaction_type", nullable = false)
     private String transactionType;
-
-    @Column(nullable = false)
-    private String note;
 
     @Column(name = "created_at", nullable = false)
     private String createdAt;

@@ -1,6 +1,9 @@
 // API utility with JWT token handling
 const API_BASE_URL = 'http://localhost:8080'
 const responseCache = new Map()
+const blobUrlCache = new Map()
+const inFlightJsonRequests = new Map()
+const inFlightBlobRequests = new Map()
 
 const getCurrentUserId = () => {
   const userStr = localStorage.getItem('user')
@@ -18,8 +21,34 @@ const getCurrentUserId = () => {
 
 const getCacheKey = (endpoint) => `${getCurrentUserId()}:${endpoint}`
 
-export const clearApiCache = () => {
+const revokeCachedBlobUrl = (cacheKey) => {
+  const cached = blobUrlCache.get(cacheKey)
+  if (cached?.url) {
+    URL.revokeObjectURL(cached.url)
+  }
+}
+
+const clearResponseCache = () => {
   responseCache.clear()
+  inFlightJsonRequests.clear()
+}
+
+export const clearApiCache = () => {
+  clearResponseCache()
+  for (const cacheKey of blobUrlCache.keys()) {
+    revokeCachedBlobUrl(cacheKey)
+  }
+  inFlightBlobRequests.clear()
+  blobUrlCache.clear()
+}
+
+export const invalidateApiCache = (endpoint) => {
+  const cacheKey = getCacheKey(endpoint)
+  responseCache.delete(cacheKey)
+  inFlightJsonRequests.delete(cacheKey)
+  revokeCachedBlobUrl(cacheKey)
+  inFlightBlobRequests.delete(cacheKey)
+  blobUrlCache.delete(cacheKey)
 }
 
 export const getAuthHeaders = () => {
@@ -41,7 +70,8 @@ export const apiCall = async (endpoint, options = {}) => {
   }
 
   if (method !== 'GET') {
-    clearApiCache()
+    // Invalidate JSON cache on writes, but preserve photo/blob cache.
+    clearResponseCache()
   }
 
   try {
@@ -82,13 +112,75 @@ export const apiGetCached = async (endpoint, { ttlMs = 30000, forceRefresh = fal
     return cached.data
   }
 
-  const data = await apiCall(endpoint, { method: 'GET' })
-  responseCache.set(cacheKey, {
-    timestamp: now,
-    data,
+  if (!forceRefresh) {
+    const inFlight = inFlightJsonRequests.get(cacheKey)
+    if (inFlight) {
+      return inFlight
+    }
+  }
+
+  const requestPromise = apiCall(endpoint, { method: 'GET' }).then((data) => {
+    responseCache.set(cacheKey, {
+      timestamp: Date.now(),
+      data,
+    })
+    return data
   })
 
-  return data
+  inFlightJsonRequests.set(cacheKey, requestPromise)
+
+  try {
+    return await requestPromise
+  } finally {
+    inFlightJsonRequests.delete(cacheKey)
+  }
+}
+
+export const apiGetBlobUrlCached = async (endpoint, { ttlMs = 120000, forceRefresh = false } = {}) => {
+  const cacheKey = getCacheKey(endpoint)
+  const cached = blobUrlCache.get(cacheKey)
+  const now = Date.now()
+
+  if (!forceRefresh && cached && now - cached.timestamp < ttlMs) {
+    return cached.url
+  }
+
+  if (!forceRefresh) {
+    const inFlight = inFlightBlobRequests.get(cacheKey)
+    if (inFlight) {
+      return inFlight
+    }
+  }
+
+  const requestPromise = fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'GET',
+    headers: {
+      ...getAuthHeaders(),
+    },
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error('Failed to load image')
+    }
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+
+    revokeCachedBlobUrl(cacheKey)
+    blobUrlCache.set(cacheKey, {
+      timestamp: Date.now(),
+      url,
+    })
+
+    return url
+  })
+
+  inFlightBlobRequests.set(cacheKey, requestPromise)
+
+  try {
+    return await requestPromise
+  } finally {
+    inFlightBlobRequests.delete(cacheKey)
+  }
 }
 
 export const logout = () => {

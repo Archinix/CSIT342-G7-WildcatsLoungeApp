@@ -23,11 +23,17 @@ public class OrderEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private RegisterEntity user;
 
+    @Column(name = "order_number", nullable = false, unique = true)
+    private String orderNumber;
+
     @Column(nullable = false)
     private String status;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
+
+    @Column(name = "shipping_address")
+    private String shippingAddress;
 
     @Column(name = "created_at", nullable = false)
     private String createdAt;

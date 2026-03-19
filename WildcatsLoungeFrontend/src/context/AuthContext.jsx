@@ -23,11 +23,20 @@ export const AuthProvider = ({ children }) => {
     logoutUtil()
   }
 
+  const updateUser = (partialUserData) => {
+    setUser((prev) => {
+      const nextUser = { ...(prev || {}), ...(partialUserData || {}) }
+      localStorage.setItem('user', JSON.stringify(nextUser))
+      return nextUser
+    })
+  }
+
   const value = {
     user,
     isLoggedIn,
     loading,
     login,
+    updateUser,
     logout,
   }
 

@@ -48,24 +48,24 @@ public class OrderService {
                 .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        OrderEntity order = new OrderEntity(
-                null,
-                user,
-                "PENDING",
-                total,
-                String.valueOf(System.currentTimeMillis())
-        );
+        String createdAt = String.valueOf(System.currentTimeMillis());
+        OrderEntity order = new OrderEntity();
+        order.setUser(user);
+        order.setOrderNumber("ORD-" + createdAt);
+        order.setStatus("PENDING");
+        order.setTotal(total);
+        order.setShippingAddress("Pickup");
+        order.setCreatedAt(createdAt);
 
         OrderEntity savedOrder = orderRepository.save(order);
 
         for (CartItemEntity cartItem : cartItems) {
-            OrderItemEntity orderItem = new OrderItemEntity(
-                    null,
-                    savedOrder,
-                    cartItem.getProduct(),
-                    cartItem.getQuantity(),
-                    cartItem.getProduct().getPrice()
-            );
+            OrderItemEntity orderItem = new OrderItemEntity();
+            orderItem.setOrder(savedOrder);
+            orderItem.setProduct(cartItem.getProduct());
+            orderItem.setProductName(cartItem.getProduct().getName());
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setUnitPrice(cartItem.getProduct().getPrice());
             orderItemRepository.save(orderItem);
         }
 
@@ -110,9 +110,11 @@ public class OrderService {
 
         return new OrderDTO(
                 order.getId(),
+            order.getOrderNumber(),
                 order.getUser().getEmail(),
                 order.getStatus(),
                 order.getTotal(),
+            order.getShippingAddress(),
                 order.getCreatedAt(),
                 items
         );

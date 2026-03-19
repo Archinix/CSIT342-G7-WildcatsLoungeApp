@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/useAuth'
 import { useNavigate } from 'react-router-dom'
+import { apiGetBlobUrlCached } from '../utils/api'
 import './ProfileDropdown.css'
-
-const photoUrlCache = new Map()
 
 function ProfileDropdown() {
   const { logout, user } = useAuth()
@@ -30,26 +29,9 @@ function ProfileDropdown() {
         return
       }
 
-      const cachedPhotoUrl = photoUrlCache.get(user.id)
-      if (cachedPhotoUrl) {
-        setPhotoUrl(cachedPhotoUrl)
-        return
-      }
-
       try {
-        const token = localStorage.getItem('accessToken')
-        const response = await fetch(`http://localhost:8080/auth/users/${user.id}/photo`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-
-        if (response.ok) {
-          const blob = await response.blob()
-          const url = URL.createObjectURL(blob)
-          photoUrlCache.set(user.id, url)
-          setPhotoUrl(url)
-        }
+        const url = await apiGetBlobUrlCached(`/auth/users/${user.id}/photo`, { ttlMs: 120000 })
+        setPhotoUrl(url)
       } catch (error) {
         console.log('No photo found or error fetching photo')
       }

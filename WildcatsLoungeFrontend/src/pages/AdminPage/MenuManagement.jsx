@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../../components/AppShell'
-import { apiCall } from '../../utils/api'
+import { apiCall, apiGetCached } from '../../utils/api'
 
 function MenuManagement() {
   const [form, setForm] = useState({
@@ -20,7 +20,7 @@ function MenuManagement() {
   const loadProducts = async () => {
     setLoadingProducts(true)
     try {
-      const data = await apiCall('/products')
+      const data = await apiGetCached('/products', { ttlMs: 60000 })
       setProducts(Array.isArray(data) ? data : [])
     } catch (err) {
       setError(err.message || 'Failed to load products')

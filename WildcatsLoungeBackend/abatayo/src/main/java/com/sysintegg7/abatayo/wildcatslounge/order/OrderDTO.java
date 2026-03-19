@@ -12,9 +12,11 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderDTO {
     private Long orderId;
+    private String orderNumber;
     private String userEmail;
     private String status;
     private BigDecimal total;
+    private String shippingAddress;
     private String createdAt;
     private List<OrderItemDTO> items;
 }
