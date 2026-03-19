@@ -51,8 +51,8 @@ function ChangePassword() {
       newErrors.newPassword = 'Password must contain a lowercase letter'
     } else if (!/[0-9]/.test(formData.newPassword)) {
       newErrors.newPassword = 'Password must contain a digit'
-    } else if (!/[!@#$%^&*]/.test(formData.newPassword)) {
-      newErrors.newPassword = 'Password must contain a special character (!@#$%^&*)'
+    } else if (!/[!@#$%^&*.]/.test(formData.newPassword)) {
+      newErrors.newPassword = 'Password must contain a special character (!@#$%^&*.)'
     }
 
     if (!formData.confirmPassword) {
@@ -126,7 +126,7 @@ function ChangePassword() {
     if (password.length >= 12) strength++
     if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++
     if (/[0-9]/.test(password)) strength++
-    if (/[!@#$%^&*]/.test(password)) strength++
+    if (/[!@#$%^&*.]/.test(password)) strength++
 
     const strengthMap = {
       1: { text: 'Weak', color: '#f44336', percentage: 20 },
@@ -214,7 +214,7 @@ function ChangePassword() {
                   <br />
                   • One digit (0-9)
                   <br />
-                  • One special character (!@#$%^&*)
+                  • One special character (!@#$%^&*.)
                 </p>
               </div>
 

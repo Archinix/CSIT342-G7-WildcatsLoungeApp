@@ -19,7 +19,7 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
         boolean hasMinLength = password.length() >= 8;
         boolean hasUppercase = password.matches(".*[A-Z].*");
         boolean hasNumber = password.matches(".*[0-9].*");
-        boolean hasSpecialChar = password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
+        boolean hasSpecialChar = password.matches(".*[.!@#$%^&*(),?\":{}|<>].*");
 
         return hasMinLength && hasUppercase && hasNumber && hasSpecialChar;
     }
