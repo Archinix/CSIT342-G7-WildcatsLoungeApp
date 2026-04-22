@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiCall, apiGetCached } from '../../utils/api'
 import AppShell from '../../components/AppShell'
+import MenuCartBubble from '../../components/MenuCartBubble'
 
 const ADD_ON_OPTIONS = [
   { id: 'extra-shot', label: 'Extra Shot', price: 30 },
@@ -10,11 +11,21 @@ const ADD_ON_OPTIONS = [
 
 function Menu() {
   const [products, setProducts] = useState([])
+  const [cart, setCart] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [selectedAddOns, setSelectedAddOns] = useState([])
+
+  const loadCart = async ({ forceRefresh = false } = {}) => {
+    try {
+      const data = await apiGetCached('/cart', { ttlMs: 15000, forceRefresh })
+      setCart(data)
+    } catch {
+      setCart(null)
+    }
+  }
 
   const loadProducts = async () => {
     setLoading(true)
@@ -33,6 +44,7 @@ function Menu() {
 
   useEffect(() => {
     void loadProducts()
+    void loadCart()
   }, [])
 
   const addToCart = async (productId, qty = 1) => {
@@ -41,6 +53,7 @@ function Menu() {
         method: 'POST',
         body: JSON.stringify({ productId, quantity: qty }),
       })
+      await loadCart({ forceRefresh: true })
       alert('Added to cart')
     } catch (err) {
       alert(err.message || 'Unable to add to cart')
@@ -77,6 +90,8 @@ function Menu() {
       subtitle="Fresh brews and pastries from Wildcats Lounge"
       rightContent={null}
     >
+      <MenuCartBubble cart={cart} onRefreshCart={() => loadCart({ forceRefresh: true })} />
+
       <section className="wl-promo-bar" aria-label="promotion">
         <span className="wl-promo-icon">☕</span>
         <span>Special: Buy 2 Get 1 Free!</span>

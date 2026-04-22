@@ -101,7 +101,7 @@ function Orders() {
         <section className="wl-order-list">
           {filteredOrders.map((order, index) => {
             const statusText = order.status || 'Pending'
-            const tableLabel = order.tableLabel || (order.tableNumber ? `Table ${order.tableNumber}` : 'Table 1')
+            const customerLabel = order.customerName || order.tableLabel || 'Customer'
             const elapsedText = formatElapsed(order)
             const itemSummary = toItemSummary(order.items)
 
@@ -117,7 +117,7 @@ function Orders() {
 
                 <div className="wl-order-meta-row">
                   <p><span aria-hidden="true">◻</span>{itemSummary}</p>
-                  <p><span aria-hidden="true">◉</span>{tableLabel}</p>
+                  <p><span aria-hidden="true">◉</span>{customerLabel}</p>
                   <p><span aria-hidden="true">◷</span>{elapsedText}</p>
                 </div>
 

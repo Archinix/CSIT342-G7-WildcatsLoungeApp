@@ -1,11 +1,11 @@
 package com.sysintegg7.abatayo.wildcatslounge.order;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -14,6 +14,7 @@ public class OrderDTO {
     private Long orderId;
     private String orderNumber;
     private String userEmail;
+    private String customerName;
     private String status;
     private BigDecimal total;
     private String shippingAddress;

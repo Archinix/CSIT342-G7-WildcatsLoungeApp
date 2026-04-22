@@ -1,15 +1,16 @@
 package com.sysintegg7.abatayo.wildcatslounge.order;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository;
 import com.sysintegg7.abatayo.wildcatslounge.cart.CartEntity;
 import com.sysintegg7.abatayo.wildcatslounge.cart.CartItemEntity;
 import com.sysintegg7.abatayo.wildcatslounge.cart.CartService;
 import com.sysintegg7.abatayo.wildcatslounge.loyalty.LoyaltyService;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @Service
 public class OrderService {
@@ -32,7 +33,7 @@ public class OrderService {
         this.loyaltyService = loyaltyService;
     }
 
-    public OrderDTO placeOrder(String email) {
+    public OrderDTO placeOrder(String email, String customerName) {
         RegisterEntity user = registerRepository.findByEmail(email).orElse(null);
         if (user == null) {
             return null;
@@ -55,6 +56,7 @@ public class OrderService {
         order.setStatus("PENDING");
         order.setTotal(total);
         order.setShippingAddress("Pickup");
+        order.setCustomerName(resolveCustomerName(user, customerName));
         order.setCreatedAt(createdAt);
 
         OrderEntity savedOrder = orderRepository.save(order);
@@ -112,11 +114,31 @@ public class OrderService {
                 order.getId(),
             order.getOrderNumber(),
                 order.getUser().getEmail(),
+                order.getCustomerName(),
                 order.getStatus(),
                 order.getTotal(),
             order.getShippingAddress(),
                 order.getCreatedAt(),
                 items
         );
+    }
+
+    private String resolveCustomerName(RegisterEntity user, String requestedName) {
+        if (requestedName != null && !requestedName.isBlank()) {
+            return requestedName.trim();
+        }
+
+        String fullName = user.getFullName();
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName.trim();
+        }
+
+        String email = user.getEmail();
+        if (email == null || email.isBlank()) {
+            return "Customer";
+        }
+
+        int atIndex = email.indexOf('@');
+        return atIndex > 0 ? email.substring(0, atIndex) : email;
     }
 }
