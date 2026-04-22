@@ -1,14 +1,15 @@
 package com.sysintegg7.abatayo.wildcatslounge.cart;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository;
 import com.sysintegg7.abatayo.wildcatslounge.product.ProductEntity;
 import com.sysintegg7.abatayo.wildcatslounge.product.ProductRepository;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CartService {
@@ -67,21 +68,39 @@ public class CartService {
         return toCartDTO(cart, user.getEmail());
     }
 
-    public boolean removeItem(String email, Long cartItemId) {
+    public CartDTO removeItem(String email, Long cartItemId) {
         RegisterEntity user = registerRepository.findByEmail(email).orElse(null);
         if (user == null) {
-            return false;
+            return null;
         }
 
         CartEntity cart = getOrCreateCart(user);
         CartItemEntity item = cartItemRepository.findById(cartItemId).orElse(null);
 
         if (item == null || !item.getCart().getId().equals(cart.getId())) {
-            return false;
+            return null;
         }
 
         cartItemRepository.delete(item);
-        return true;
+        return toCartDTO(cart, user.getEmail());
+    }
+
+    public CartDTO updateItemQuantity(String email, Long cartItemId, Integer quantity) {
+        RegisterEntity user = registerRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return null;
+        }
+
+        CartEntity cart = getOrCreateCart(user);
+        CartItemEntity item = cartItemRepository.findById(cartItemId).orElse(null);
+
+        if (item == null || !item.getCart().getId().equals(cart.getId())) {
+            return null;
+        }
+
+        item.setQuantity(quantity);
+        cartItemRepository.save(item);
+        return toCartDTO(cart, user.getEmail());
     }
 
     public void clearCart(CartEntity cart) {

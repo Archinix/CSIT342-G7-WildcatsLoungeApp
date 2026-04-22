@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiCall } from '../utils/api'
 
 const CHECKOUT_STEPS = [
@@ -12,13 +12,31 @@ const formatPrice = (value) => {
   return new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 }).format(amount)
 }
 
-function MenuCartBubble({ cart, onRefreshCart }) {
+const toAmount = (value) => {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? amount : 0
+}
+
+const getUnitPrice = (item) => {
+  const unitPrice = toAmount(item.unitPrice ?? item.productPrice ?? item.price)
+  if (unitPrice > 0) {
+    return unitPrice
+  }
+
+  const quantity = Math.max(1, toAmount(item.quantity))
+  return toAmount(item.lineTotal) / quantity
+}
+
+function MenuCartBubble({ cart, onRefreshCart, onCartChange }) {
   const [isOpen, setIsOpen] = useState(false)
   const [step, setStep] = useState('cart')
   const [orderType, setOrderType] = useState('dine-in')
   const [customerName, setCustomerName] = useState('')
   const [specialInstructions, setSpecialInstructions] = useState('')
+  const [viewCart, setViewCart] = useState(cart)
   const [promoCode, setPromoCode] = useState('')
+  const desiredQtyByItemRef = useRef(new Map())
+  const inFlightItemIdsRef = useRef(new Set())
 
   useEffect(() => {
     const savedName = localStorage.getItem('checkoutCustomerName')
@@ -27,12 +45,42 @@ function MenuCartBubble({ cart, onRefreshCart }) {
     }
   }, [])
 
-  const items = Array.isArray(cart?.items) ? cart.items : []
+  const activeCart = viewCart ?? cart
+  const items = Array.isArray(activeCart?.items) ? activeCart.items : []
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + Number(item.quantity ?? 1), 0),
     [items],
   )
-  const total = Number(cart?.total ?? 0)
+  const total = Number(activeCart?.total ?? 0)
+
+  useEffect(() => {
+    if (!cart) {
+      setViewCart(cart)
+      return
+    }
+
+    const incomingItems = Array.isArray(cart.items) ? cart.items : []
+    const mergedItems = incomingItems.map((entry) => {
+      const desiredQty = desiredQtyByItemRef.current.get(entry.cartItemId)
+      if (!desiredQty || desiredQty < 1) {
+        return entry
+      }
+
+      const unitPrice = getUnitPrice(entry)
+      return {
+        ...entry,
+        quantity: desiredQty,
+        lineTotal: unitPrice * desiredQty,
+      }
+    })
+
+    const mergedTotal = mergedItems.reduce((sum, entry) => sum + toAmount(entry.lineTotal), 0)
+    setViewCart({
+      ...cart,
+      items: mergedItems,
+      total: mergedTotal,
+    })
+  }, [cart])
 
   useEffect(() => {
     if (items.length === 0) {
@@ -47,43 +95,142 @@ function MenuCartBubble({ cart, onRefreshCart }) {
     }
   }, [isOpen])
 
-  const removeItem = async (id) => {
+  const applyCartUpdate = (nextCart) => {
+    setViewCart(nextCart)
+    onCartChange?.(nextCart)
+  }
+
+  const confirmRemoveItem = (itemName) => {
+    const label = itemName && itemName.trim() ? itemName.trim() : 'this item'
+    return window.confirm(`Remove ${label} from your cart?`)
+  }
+
+  const removeItem = async (id, { requireConfirmation = false, itemName = '' } = {}) => {
+    if (requireConfirmation && !confirmRemoveItem(itemName)) {
+      return false
+    }
+
+    desiredQtyByItemRef.current.delete(id)
+
+    const optimisticItems = items.filter((entry) => entry.cartItemId !== id)
+    const optimisticTotal = optimisticItems.reduce((sum, entry) => sum + toAmount(entry.lineTotal), 0)
+
+    if (activeCart) {
+      applyCartUpdate({
+        ...activeCart,
+        items: optimisticItems,
+        total: optimisticTotal,
+      })
+    }
+
     try {
-      await apiCall(`/cart/items/${id}`, { method: 'DELETE' })
-      await onRefreshCart?.()
+      const updatedCart = await apiCall(`/cart/items/${id}`, { method: 'DELETE' })
+      applyCartUpdate(updatedCart)
+      return true
     } catch (error) {
       console.error('Failed to remove cart item:', error)
+      await onRefreshCart?.()
+      return false
+    }
+  }
+
+  const applyOptimisticQuantity = (cartItemId, quantity) => {
+    if (!activeCart) {
+      return
+    }
+
+    const optimisticItems = items.map((entry) => {
+      if (entry.cartItemId !== cartItemId) {
+        return entry
+      }
+
+      const unitPrice = getUnitPrice(entry)
+      return {
+        ...entry,
+        quantity,
+        lineTotal: unitPrice * quantity,
+      }
+    })
+
+    const optimisticTotal = optimisticItems.reduce((sum, entry) => sum + toAmount(entry.lineTotal), 0)
+
+    applyCartUpdate({
+      ...activeCart,
+      items: optimisticItems,
+      total: optimisticTotal,
+    })
+  }
+
+  const syncLatestQuantity = async (cartItemId) => {
+    if (inFlightItemIdsRef.current.has(cartItemId)) {
+      return
+    }
+
+    inFlightItemIdsRef.current.add(cartItemId)
+
+    try {
+      while (true) {
+        const requestedQuantity = desiredQtyByItemRef.current.get(cartItemId)
+        if (!requestedQuantity || requestedQuantity < 1) {
+          break
+        }
+
+        const updatedCart = await apiCall(`/cart/items/${cartItemId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ quantity: requestedQuantity }),
+        })
+
+        const desiredAfterResponse = desiredQtyByItemRef.current.get(cartItemId)
+        if (desiredAfterResponse && desiredAfterResponse !== requestedQuantity) {
+          // Newer local intent exists; ignore stale response to avoid UI flashback.
+          continue
+        }
+
+        const updatedItem = Array.isArray(updatedCart?.items)
+          ? updatedCart.items.find((entry) => entry.cartItemId === cartItemId)
+          : null
+
+        if (!updatedItem) {
+          desiredQtyByItemRef.current.delete(cartItemId)
+          break
+        }
+
+        applyCartUpdate(updatedCart)
+
+        const confirmedQuantity = toAmount(updatedItem.quantity)
+        const stillDesired = desiredQtyByItemRef.current.get(cartItemId)
+        if (stillDesired === confirmedQuantity) {
+          desiredQtyByItemRef.current.delete(cartItemId)
+          break
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync latest cart quantity:', error)
+      await onRefreshCart?.()
+    } finally {
+      inFlightItemIdsRef.current.delete(cartItemId)
     }
   }
 
   const updateQuantity = async (item, delta) => {
-    const currentQty = Number(item.quantity ?? 1)
+    const currentQty = desiredQtyByItemRef.current.get(item.cartItemId) ?? Number(item.quantity ?? 1)
     const nextQty = currentQty + delta
 
     try {
-      if (delta > 0) {
-        await apiCall('/cart/items', {
-          method: 'POST',
-          body: JSON.stringify({ productId: item.productId, quantity: 1 }),
-        })
-        await onRefreshCart?.()
-        return
-      }
-
       if (nextQty <= 0) {
-        await removeItem(item.cartItemId)
+        await removeItem(item.cartItemId, {
+          requireConfirmation: true,
+          itemName: item.productName,
+        })
         return
       }
 
-      // Backend supports add/remove only, so rebuild this item with the new quantity.
-      await apiCall(`/cart/items/${item.cartItemId}`, { method: 'DELETE' })
-      await apiCall('/cart/items', {
-        method: 'POST',
-        body: JSON.stringify({ productId: item.productId, quantity: nextQty }),
-      })
-      await onRefreshCart?.()
+      desiredQtyByItemRef.current.set(item.cartItemId, nextQty)
+      applyOptimisticQuantity(item.cartItemId, nextQty)
+      await syncLatestQuantity(item.cartItemId)
     } catch (error) {
       console.error('Failed to update cart quantity:', error)
+      await onRefreshCart?.()
     }
   }
 
@@ -186,7 +333,11 @@ function MenuCartBubble({ cart, onRefreshCart }) {
                                 <button type="button" onClick={() => updateQuantity(item, 1)} aria-label="Increase quantity">+</button>
                               </div>
 
-                              <button type="button" className="wl-danger-link wl-cart-bubble-remove" onClick={() => removeItem(item.cartItemId)}>
+                              <button
+                                type="button"
+                                className="wl-danger-link wl-cart-bubble-remove"
+                                onClick={() => removeItem(item.cartItemId, { requireConfirmation: true, itemName: item.productName })}
+                              >
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                   <path d="M3 6h18" />
                                   <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />

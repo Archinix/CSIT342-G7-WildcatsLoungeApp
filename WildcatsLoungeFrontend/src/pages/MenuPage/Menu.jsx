@@ -54,7 +54,6 @@ function Menu() {
         body: JSON.stringify({ productId, quantity: qty }),
       })
       await loadCart({ forceRefresh: true })
-      alert('Added to cart')
     } catch (err) {
       alert(err.message || 'Unable to add to cart')
     }
@@ -90,7 +89,11 @@ function Menu() {
       subtitle="Fresh brews and pastries from Wildcats Lounge"
       rightContent={null}
     >
-      <MenuCartBubble cart={cart} onRefreshCart={() => loadCart({ forceRefresh: true })} />
+      <MenuCartBubble
+        cart={cart}
+        onRefreshCart={() => loadCart({ forceRefresh: true })}
+        onCartChange={setCart}
+      />
 
       <section className="wl-promo-bar" aria-label="promotion">
         <span className="wl-promo-icon">☕</span>
