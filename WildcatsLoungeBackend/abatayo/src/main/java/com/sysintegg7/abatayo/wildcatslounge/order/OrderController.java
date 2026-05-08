@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     private final OrderService orderService;
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
 
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
@@ -28,11 +31,16 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<?> placeOrder(Authentication authentication, @RequestBody(required = false) PlaceOrderRequest request) {
         String customerName = request != null ? request.getCustomerName() : null;
-        OrderDTO order = orderService.placeOrder(authentication.getName(), customerName);
-        if (order == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to place order. Ensure cart has items.");
+        try {
+            OrderDTO order = orderService.placeOrder(authentication.getName(), customerName);
+            if (order == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to place order. Ensure cart has items.");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(order);
+        } catch (Exception e) {
+            logger.error("Error placing order for user {}", authentication == null ? "unknown" : authentication.getName(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error: " + e.getMessage());
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
     @GetMapping
