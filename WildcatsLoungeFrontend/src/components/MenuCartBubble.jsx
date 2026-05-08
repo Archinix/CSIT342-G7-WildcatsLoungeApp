@@ -540,7 +540,7 @@ function MenuCartBubble({ cart, onRefreshCart, onCartChange }) {
                       )}
 
                       {paymentStatus === 'error' && (
-                        <div className="wl-alert wl-alert-error" style={{ marginTop: '1rem' }}>
+                        <div className=".wl-error-text" style={{ marginTop: '1rem' }}>
                           Payment confirmation failed. Please try again.
                         </div>
                       )}
