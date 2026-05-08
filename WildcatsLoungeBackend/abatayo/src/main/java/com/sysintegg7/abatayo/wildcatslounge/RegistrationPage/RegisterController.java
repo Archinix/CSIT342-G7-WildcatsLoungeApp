@@ -18,7 +18,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://wildcats-lounge-frontend.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://csit-342-g7-wildcats-lounge-app.vercel.app"})
 public class RegisterController {
     
     @Autowired

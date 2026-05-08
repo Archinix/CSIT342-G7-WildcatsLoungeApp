@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://csit-342-g7-wildcats-lounge-app.vercel.app"})
 public class ProductController {
 
     private final ProductService productService;
