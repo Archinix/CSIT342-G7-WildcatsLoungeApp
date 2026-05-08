@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './Signup.css'
 import logo from '../../assets/logo/logo.jpg'
+import { API_BASE_URL } from '../../utils/api'
 
 function Signup() {
   const [firstName, setFirstName] = useState('')
@@ -101,7 +102,7 @@ function Signup() {
 
     setLoading(true)
     try {
-      const response = await fetch('http://localhost:8080/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

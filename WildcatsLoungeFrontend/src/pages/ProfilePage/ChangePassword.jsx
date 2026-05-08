@@ -3,6 +3,7 @@ import { useAuth } from '../../context/useAuth'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../../components/AppShell'
 import './ChangePassword.css'
+import { API_BASE_URL } from '../../utils/api'
 
 function ChangePassword() {
   const { user } = useAuth()
@@ -81,7 +82,7 @@ function ChangePassword() {
     setIsSuccess(false)
 
     try {
-      const response = await fetch(`http://localhost:8080/auth/users/${user?.id}/change-password`, {
+      const response = await fetch(`${API_BASE_URL}/auth/users/${user?.id}/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
