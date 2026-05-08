@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth/password")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://wildcats-lounge-frontend.vercel.app"})
 public class PasswordResetController {
 
     private final PasswordResetService passwordResetService;

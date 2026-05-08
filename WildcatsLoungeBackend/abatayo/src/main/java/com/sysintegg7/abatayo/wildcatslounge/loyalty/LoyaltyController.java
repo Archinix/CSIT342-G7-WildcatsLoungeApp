@@ -16,7 +16,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/loyalty")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://wildcats-lounge-frontend.vercel.app"})
 public class LoyaltyController {
 
     private final LoyaltyService loyaltyService;
