@@ -43,6 +43,7 @@ const buildNotification = (payload) => {
 
 export const OrderNotificationsProvider = ({ children }) => {
   const { user, isLoggedIn } = useAuth()
+  const isAdminRole = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
   const [notifications, setNotifications] = useState([])
   const [latestNotification, setLatestNotification] = useState(null)
   const [connectionStatus, setConnectionStatus] = useState('disconnected')
@@ -72,7 +73,7 @@ export const OrderNotificationsProvider = ({ children }) => {
     const connect = async () => {
       await stopClient()
 
-      if (!isLoggedIn || !user?.id) {
+      if (!isLoggedIn || !user?.id || isAdminRole) {
         if (active) {
           setNotifications([])
           setLatestNotification(null)
@@ -136,7 +137,7 @@ export const OrderNotificationsProvider = ({ children }) => {
       active = false
       void stopClient()
     }
-  }, [isLoggedIn, user?.id])
+  }, [isLoggedIn, user?.id, isAdminRole])
 
   const markAsRead = (notificationId) => {
     setNotifications((current) => current.map((notification) => (

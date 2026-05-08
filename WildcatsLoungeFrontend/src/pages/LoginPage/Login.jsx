@@ -74,7 +74,11 @@ function Login() {
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
         })
-        navigate('/menu')
+        const userRole = data?.user?.role
+        const redirectPath = userRole === 'ADMIN' || userRole === 'SUPERADMIN'
+          ? '/admin/menu-management'
+          : '/menu'
+        navigate(redirectPath)
       } else {
         setErrors({ submit: data.message || 'Invalid email or password' })
       }
