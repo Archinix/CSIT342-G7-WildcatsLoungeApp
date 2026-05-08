@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import './Login.css'
 import logo from '../../assets/logo/logo.jpg'
 import { useAuth } from '../../context/useAuth'
@@ -135,9 +135,9 @@ function Login() {
               />
               Remember me
             </label>
-            <a href="#" className="login-forgot">
+            <Link to="/forgot-password" className="login-forgot">
               Forgot Password?
-            </a>
+            </Link>
           </div>
 
           <button type="submit" className="login-btn" disabled={loading}>

@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,5 +43,20 @@ public class OrderController {
     @GetMapping("/active")
     public ResponseEntity<List<OrderDTO>> getActiveOrders() {
         return ResponseEntity.ok(orderService.getActiveOrders());
+    }
+
+    @GetMapping("/staff/queue")
+    public ResponseEntity<List<OrderDTO>> getStaffQueue() {
+        List<OrderDTO> pendingAndInProgress = orderService.getActiveOrders();
+        return ResponseEntity.ok(pendingAndInProgress);
+    }
+
+    @PatchMapping("/staff/orders/{id}")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody UpdateOrderStatusRequest request) {
+        OrderDTO updatedOrder = orderService.updateOrderStatus(id, request.getStatus());
+        if (updatedOrder == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to update order status. Invalid order or transition.");
+        }
+        return ResponseEntity.ok(updatedOrder);
     }
 }

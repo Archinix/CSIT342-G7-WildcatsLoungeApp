@@ -20,17 +20,20 @@ public class OrderService {
     private final RegisterRepository registerRepository;
     private final CartService cartService;
     private final LoyaltyService loyaltyService;
+    private final OrderWebSocketService webSocketService;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         RegisterRepository registerRepository,
                         CartService cartService,
-                        LoyaltyService loyaltyService) {
+                        LoyaltyService loyaltyService,
+                        OrderWebSocketService webSocketService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.registerRepository = registerRepository;
         this.cartService = cartService;
         this.loyaltyService = loyaltyService;
+        this.webSocketService = webSocketService;
     }
 
     public OrderDTO placeOrder(String email, String customerName) {
@@ -140,5 +143,43 @@ public class OrderService {
 
         int atIndex = email.indexOf('@');
         return atIndex > 0 ? email.substring(0, atIndex) : email;
+    }
+
+    public OrderDTO updateOrderStatus(Long orderId, String newStatus) {
+        java.util.Optional<OrderEntity> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) {
+            return null;
+        }
+
+        OrderEntity order = orderOpt.get();
+        
+        // Validate status transition
+        String currentStatus = order.getStatus();
+        if (!isValidStatusTransition(currentStatus, newStatus)) {
+            return null;
+        }
+
+        order.setStatus(newStatus);
+        OrderEntity updatedOrder = orderRepository.save(order);
+        
+        // Send WebSocket notification to customer
+        webSocketService.notifyOrderStatusChange(updatedOrder, newStatus);
+        
+        return toOrderDTO(updatedOrder);
+    }
+
+    private boolean isValidStatusTransition(String currentStatus, String newStatus) {
+        java.util.Map<String, java.util.List<String>> validTransitions = new java.util.HashMap<>();
+        validTransitions.put("PENDING", java.util.Arrays.asList("IN_PROGRESS", "CANCELLED"));
+        validTransitions.put("IN_PROGRESS", java.util.Arrays.asList("READY", "PENDING"));
+        validTransitions.put("READY", java.util.Arrays.asList("COMPLETED", "IN_PROGRESS"));
+        validTransitions.put("COMPLETED", java.util.Arrays.asList());
+        validTransitions.put("CANCELLED", java.util.Arrays.asList());
+
+        return validTransitions.getOrDefault(currentStatus, java.util.List.of()).contains(newStatus);
+    }
+
+    public OrderEntity getOrderById(Long orderId) {
+        return orderRepository.findById(orderId).orElse(null);
     }
 }
