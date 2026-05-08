@@ -39,6 +39,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/ws/orders/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                 .requestMatchers("/admin/superadmin/**").hasRole("SUPERADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPERADMIN")
