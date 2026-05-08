@@ -33,10 +33,12 @@ function MenuCartBubble({ cart, onRefreshCart, onCartChange }) {
   const [orderType, setOrderType] = useState('dine-in')
   const [customerName, setCustomerName] = useState('')
   const [specialInstructions, setSpecialInstructions] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState('idle')
   const [viewCart, setViewCart] = useState(cart)
   const [promoCode, setPromoCode] = useState('')
   const desiredQtyByItemRef = useRef(new Map())
   const inFlightItemIdsRef = useRef(new Set())
+  const paymentCloseTimerRef = useRef(null)
 
   useEffect(() => {
     const savedName = localStorage.getItem('checkoutCustomerName')
@@ -92,8 +94,16 @@ function MenuCartBubble({ cart, onRefreshCart, onCartChange }) {
   useEffect(() => {
     if (!isOpen) {
       setStep('cart')
+      setPaymentStatus('idle')
     }
   }, [isOpen])
+
+  useEffect(() => () => {
+    if (paymentCloseTimerRef.current) {
+      window.clearTimeout(paymentCloseTimerRef.current)
+      paymentCloseTimerRef.current = null
+    }
+  }, [])
 
   const applyCartUpdate = (nextCart) => {
     setViewCart(nextCart)
@@ -236,7 +246,39 @@ function MenuCartBubble({ cart, onRefreshCart, onCartChange }) {
 
   const openStep = (nextStep) => {
     setStep(nextStep)
+    if (nextStep !== 'payment') {
+      setPaymentStatus('idle')
+    }
     setIsOpen(true)
+  }
+
+  const confirmDummyPayment = async () => {
+    if (paymentStatus === 'processing' || items.length === 0) {
+      return
+    }
+
+    setPaymentStatus('processing')
+
+    try {
+      await apiCall('/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          customerName: customerName.trim() || undefined,
+        }),
+      })
+
+      setPaymentStatus('success')
+      paymentCloseTimerRef.current = window.setTimeout(async () => {
+        paymentCloseTimerRef.current = null
+        await onRefreshCart?.()
+        setIsOpen(false)
+        setStep('cart')
+        setPaymentStatus('idle')
+      }, 1800)
+    } catch (error) {
+      console.error('Failed to confirm dummy payment:', error)
+      setPaymentStatus('error')
+    }
   }
 
   if (items.length === 0) {
@@ -472,7 +514,57 @@ function MenuCartBubble({ cart, onRefreshCart, onCartChange }) {
                 </section>
               )}
 
-              {step === 'payment' && <section className="wl-payment-empty" aria-label="Payment screen" />}
+              {step === 'payment' && (
+                <section className="wl-cart-bubble-grid" aria-label="Payment screen">
+                  <div className="wl-cart-bubble-details">
+                    <div className="wl-cart-bubble-section-head">
+                      <h3>Payment</h3>
+                      <span>Dummy payment confirmation for ordering</span>
+                    </div>
+
+                    <div className="wl-promo-panel">
+                      <strong>Payment status</strong>
+                      <p className="wl-muted" style={{ marginTop: '0.5rem' }}>
+                        This is a simulated payment screen. Use the button below after you have paid the product.
+                      </p>
+                      <div className="wl-cart-bubble-mini-note">
+                        <p className="wl-muted">Order type: {orderType === 'dine-in' ? 'Dine In' : 'Pickup'}</p>
+                        <p className="wl-muted">Call-out name: {customerName || 'N/A'}</p>
+                        <p className="wl-muted">Amount due: Php {formatPrice(total)}</p>
+                      </div>
+
+                      {paymentStatus === 'success' && (
+                        <div className="wl-alert wl-alert-success" style={{ marginTop: '1rem' }}>
+                          Payment marked as successful. Your order has been placed.
+                        </div>
+                      )}
+
+                      {paymentStatus === 'error' && (
+                        <div className="wl-alert wl-alert-error" style={{ marginTop: '1rem' }}>
+                          Payment confirmation failed. Please try again.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="wl-cart-bubble-actions">
+                      <button type="button" className="wl-secondary-button" onClick={() => setStep('details')} disabled={paymentStatus === 'processing'}>
+                        Back
+                      </button>
+                      <button type="button" onClick={confirmDummyPayment} disabled={paymentStatus === 'processing'}>
+                        {paymentStatus === 'processing' ? 'Confirming...' : "I've successfully paid"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <aside className="wl-summary-card wl-cart-bubble-summary">
+                    <h3>Order Summary</h3>
+                    <div className="wl-summary-row"><span>Subtotal</span><span>Php {formatPrice(total)}</span></div>
+                    <div className="wl-summary-row"><span>Tax</span><span>Php 20</span></div>
+                    <div className="wl-summary-row"><span>Discount</span><span>- Php 0</span></div>
+                    <div className="wl-summary-row total"><span>Total</span><span>Php {formatPrice(total)}</span></div>
+                  </aside>
+                </section>
+              )}
             </div>
           </section>
         </div>
