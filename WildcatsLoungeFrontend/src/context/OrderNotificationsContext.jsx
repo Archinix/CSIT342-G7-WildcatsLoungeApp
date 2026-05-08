@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import { useAuth } from './useAuth'
@@ -43,7 +44,9 @@ const buildNotification = (payload) => {
 
 export const OrderNotificationsProvider = ({ children }) => {
   const { user, isLoggedIn } = useAuth()
+  const location = useLocation()
   const isAdminRole = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+  const shouldConnect = location.pathname.startsWith('/orders')
   const [notifications, setNotifications] = useState([])
   const [latestNotification, setLatestNotification] = useState(null)
   const [connectionStatus, setConnectionStatus] = useState('disconnected')
@@ -73,7 +76,7 @@ export const OrderNotificationsProvider = ({ children }) => {
     const connect = async () => {
       await stopClient()
 
-      if (!isLoggedIn || !user?.id || isAdminRole) {
+      if (!isLoggedIn || !user?.id || isAdminRole || !shouldConnect) {
         if (active) {
           setNotifications([])
           setLatestNotification(null)
@@ -137,7 +140,7 @@ export const OrderNotificationsProvider = ({ children }) => {
       active = false
       void stopClient()
     }
-  }, [isLoggedIn, user?.id, isAdminRole])
+  }, [isLoggedIn, user?.id, isAdminRole, shouldConnect])
 
   const markAsRead = (notificationId) => {
     setNotifications((current) => current.map((notification) => (
