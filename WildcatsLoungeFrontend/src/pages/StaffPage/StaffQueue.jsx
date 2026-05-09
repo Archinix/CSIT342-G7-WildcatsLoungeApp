@@ -42,15 +42,17 @@ export default function StaffQueue() {
       return
     }
     try {
-      await apiCall(`/orders/staff/orders/${orderId}`, {
+      console.log(`Updating order ${orderId} to status ${newStatus}`)
+      const response = await apiCall(`/orders/staff/orders/${orderId}`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
       })
+      console.log('Status update response:', response)
       // Force refresh immediately to reflect status change
       await fetchQueue(false, true)
     } catch (err) {
+      console.error('Update error details:', err)
       setError(err.message || `Failed to update to ${newStatus}`)
-      console.error('Update error:', err)
     }
   }
 
@@ -105,7 +107,7 @@ export default function StaffQueue() {
                   <span className="time">⏱ {formatTime(o.createdAt)}</span>
                 </div>
                 <button className="action-btn start" onClick={() => updateStatus(o.orderId, 'IN_PROGRESS')}>
-                  Start
+                  Prepare Order
                 </button>
               </div>
             ))
@@ -131,7 +133,7 @@ export default function StaffQueue() {
                   <span className="time">⏱ {formatTime(o.createdAt)}</span>
                 </div>
                 <button className="action-btn ready" onClick={() => updateStatus(o.orderId, 'READY')}>
-                  Ready
+                  Mark Ready
                 </button>
               </div>
             ))

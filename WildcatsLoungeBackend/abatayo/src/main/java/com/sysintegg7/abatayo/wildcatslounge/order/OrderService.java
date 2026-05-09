@@ -94,10 +94,24 @@ public class OrderService {
     }
 
     public List<OrderDTO> getActiveOrders() {
-        return orderRepository.findByStatus("PENDING")
+        List<OrderDTO> pending = orderRepository.findByStatus("PENDING")
                 .stream()
                 .map(this::toOrderDTO)
                 .toList();
+        List<OrderDTO> inProgress = orderRepository.findByStatus("IN_PROGRESS")
+                .stream()
+                .map(this::toOrderDTO)
+                .toList();
+        List<OrderDTO> ready = orderRepository.findByStatus("READY")
+                .stream()
+                .map(this::toOrderDTO)
+                .toList();
+        
+        java.util.List<OrderDTO> all = new java.util.ArrayList<>();
+        all.addAll(pending);
+        all.addAll(inProgress);
+        all.addAll(ready);
+        return all;
     }
 
     private OrderDTO toOrderDTO(OrderEntity order) {
