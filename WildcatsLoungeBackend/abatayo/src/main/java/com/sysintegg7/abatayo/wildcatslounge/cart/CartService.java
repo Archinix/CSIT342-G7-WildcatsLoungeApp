@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository;
@@ -39,6 +40,7 @@ public class CartService {
         return toCartDTO(cart, user.getEmail());
     }
 
+    @Transactional
     public CartDTO addItem(String email, AddCartItemRequest request) {
         RegisterEntity user = registerRepository.findByEmail(email).orElse(null);
         if (user == null) {
@@ -68,6 +70,7 @@ public class CartService {
         return toCartDTO(cart, user.getEmail());
     }
 
+    @Transactional
     public CartDTO removeItem(String email, Long cartItemId) {
         RegisterEntity user = registerRepository.findByEmail(email).orElse(null);
         if (user == null) {
@@ -85,6 +88,7 @@ public class CartService {
         return toCartDTO(cart, user.getEmail());
     }
 
+    @Transactional
     public CartDTO updateItemQuantity(String email, Long cartItemId, Integer quantity) {
         RegisterEntity user = registerRepository.findByEmail(email).orElse(null);
         if (user == null) {
@@ -103,6 +107,7 @@ public class CartService {
         return toCartDTO(cart, user.getEmail());
     }
 
+    @Transactional
     public void clearCart(CartEntity cart) {
         cartItemRepository.deleteByCart(cart);
     }

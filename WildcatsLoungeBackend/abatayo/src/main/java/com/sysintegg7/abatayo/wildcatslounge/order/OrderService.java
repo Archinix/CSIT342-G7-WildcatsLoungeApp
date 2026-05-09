@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository;
@@ -36,6 +37,7 @@ public class OrderService {
         this.webSocketService = webSocketService;
     }
 
+    @Transactional
     public OrderDTO placeOrder(String email, String customerName) {
         RegisterEntity user = registerRepository.findByEmail(email).orElse(null);
         if (user == null) {
@@ -145,6 +147,7 @@ public class OrderService {
         return atIndex > 0 ? email.substring(0, atIndex) : email;
     }
 
+    @Transactional
     public OrderDTO updateOrderStatus(Long orderId, String newStatus) {
         java.util.Optional<OrderEntity> orderOpt = orderRepository.findById(orderId);
         if (orderOpt.isEmpty()) {
