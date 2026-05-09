@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -44,11 +46,14 @@ public class SendGridEmailService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + apiKey);
 
-        // Send request and log response
+        // Send request and log response details
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        String response = restTemplate.postForObject(SENDGRID_API_URL, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(SENDGRID_API_URL, HttpMethod.POST, entity, String.class);
 
-        logger.info("SendGrid response (may be empty): {}", response);
+        logger.info("SendGrid accepted message with status: {}", response.getStatusCode());
+        if (response.getHeaders() != null) {
+          logger.info("SendGrid headers: {}", response.getHeaders());
+        }
         logger.info("Email send attempt completed for: {}", toEmail);
         } catch (Exception e) {
             logger.error("Failed to send email via SendGrid to {}: {}", toEmail, e.getMessage(), e);
