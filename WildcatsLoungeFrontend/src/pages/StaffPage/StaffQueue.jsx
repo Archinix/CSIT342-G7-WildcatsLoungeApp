@@ -1,6 +1,6 @@
-import { useEffect, useState, useContext } from 'react'
+import { useEffect, useState } from 'react'
 import { apiGetCached, apiCall } from '../../utils/api'
-import { OrderNotificationsContext } from '../../context/OrderNotificationsContext'
+import { useOrderNotifications } from '../../context/OrderNotificationsContext'
 import AppShell from '../../components/AppShell'
 import './StaffQueue.css'
 
@@ -8,7 +8,7 @@ export default function StaffQueue() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const { notifications } = useContext(OrderNotificationsContext) || { notifications: [] }
+  const { notifications } = useOrderNotifications()
 
   const fetchQueue = async (isBackground = false) => {
     if (!isBackground) setLoading(true)
