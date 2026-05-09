@@ -29,21 +29,27 @@ public class SendGridEmailService {
 
     public void sendEmail(String toEmail, String subject, String htmlContent) {
         try {
-            logger.info("Sending email via SendGrid to: {}", toEmail);
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+          logger.warn("SENDGRID_API_KEY is not configured. Skipping email to {}", toEmail);
+          return;
+        }
 
-            // Build SendGrid API request JSON manually
-            String requestBody = buildSendGridRequest(toEmail, subject, htmlContent);
+        logger.info("Sending email via SendGrid to: {}", toEmail);
 
-            // Create headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + apiKey);
+        // Build SendGrid API request JSON manually
+        String requestBody = buildSendGridRequest(toEmail, subject, htmlContent);
 
-            // Send request
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-            restTemplate.postForObject(SENDGRID_API_URL, entity, String.class);
+        // Create headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + apiKey);
 
-            logger.info("Email sent successfully to: {}", toEmail);
+        // Send request and log response
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+        String response = restTemplate.postForObject(SENDGRID_API_URL, entity, String.class);
+
+        logger.info("SendGrid response (may be empty): {}", response);
+        logger.info("Email send attempt completed for: {}", toEmail);
         } catch (Exception e) {
             logger.error("Failed to send email via SendGrid to {}: {}", toEmail, e.getMessage(), e);
         }
