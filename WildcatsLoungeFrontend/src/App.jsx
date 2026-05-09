@@ -15,6 +15,7 @@ import Loyalty from './pages/LoyaltyPage/Loyalty'
 import About from './pages/AboutPage/About'
 import CreateAdminAccount from './pages/AdminPage/CreateAdminAccount'
 import MenuManagement from './pages/AdminPage/MenuManagement'
+import StaffQueue from './pages/StaffPage/StaffQueue'
 import Profile from './pages/ProfilePage/Profile'
 import ChangePassword from './pages/ProfilePage/ChangePassword'
 
@@ -56,6 +57,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
                   <MenuManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff/queue"
+              element={
+                <ProtectedRoute allowedRoles={["STAFF", "ADMIN", "SUPERADMIN"]}>
+                  <StaffQueue />
                 </ProtectedRoute>
               }
             />

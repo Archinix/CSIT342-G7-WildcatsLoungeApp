@@ -8,8 +8,10 @@ function AppShell({ title, subtitle, children, rightContent }) {
   const { user } = useAuth()
   const isAdmin = user?.role === 'ADMIN'
   const isSuperAdmin = user?.role === 'SUPERADMIN'
+  const isStaff = user?.role === 'STAFF'
   const canManageMenu = isAdmin || isSuperAdmin
   const isCustomer = !canManageMenu
+  const canManageOrders = isStaff || isAdmin || isSuperAdmin
 
   return (
     <div className="wl-app-shell">
@@ -26,6 +28,7 @@ function AppShell({ title, subtitle, children, rightContent }) {
           {isCustomer && <NavLink to="/loyalty">Rewards</NavLink>}
           {isCustomer && <NavLink to="/about">About</NavLink>}
           {canManageMenu && <NavLink to="/admin/menu-management">Menu Management</NavLink>}
+          {canManageOrders && <NavLink to="/staff/queue">Order Queue</NavLink>}
           {isSuperAdmin && (
             <NavLink to="/admin/create-account">Admin Accounts</NavLink>
           )}

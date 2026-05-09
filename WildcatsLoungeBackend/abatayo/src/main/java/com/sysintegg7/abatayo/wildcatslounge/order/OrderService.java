@@ -76,9 +76,6 @@ public class OrderService {
             orderItemRepository.save(orderItem);
         }
 
-        int earnedPoints = total.intValue();
-        loyaltyService.addPoints(user, earnedPoints, "POINTS_EARNED", "Order #" + savedOrder.getId());
-
         cartService.clearCart(cart);
 
         return toOrderDTO(savedOrder);
@@ -167,6 +164,18 @@ public class OrderService {
         
         // Send WebSocket notification to customer
         webSocketService.notifyOrderStatusChange(updatedOrder, newStatus);
+        
+        // If order completed now, award loyalty points to customer
+        if (!"COMPLETED".equals(currentStatus) && "COMPLETED".equals(newStatus)) {
+            try {
+                int points = updatedOrder.getTotal() != null ? updatedOrder.getTotal().intValue() : 0;
+                if (points > 0) {
+                    loyaltyService.addPoints(updatedOrder.getUser(), points, "POINTS_EARNED", "Order #" + updatedOrder.getId());
+                }
+            } catch (Exception e) {
+                // log and continue - awarding points should not break status update
+            }
+        }
         
         return toOrderDTO(updatedOrder);
     }
