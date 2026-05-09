@@ -6,10 +6,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
@@ -22,25 +20,22 @@ public class PasswordResetService {
 
     private final PasswordResetTokenRepository tokenRepository;
     private final RegisterRepository registerRepository;
-    private final JavaMailSender mailSender;
+    private final SendGridEmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.password-reset.token-expiration-minutes:30}")
     private long tokenExpirationMinutes;
-
-    @Value("${app.mail.from-address:noreply@wildcatslounge.com}")
-    private String fromEmail;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
     public PasswordResetService(PasswordResetTokenRepository tokenRepository,
                               RegisterRepository registerRepository,
-                              JavaMailSender mailSender,
+                              SendGridEmailService emailService,
                               PasswordEncoder passwordEncoder) {
         this.tokenRepository = tokenRepository;
         this.registerRepository = registerRepository;
-        this.mailSender = mailSender;
+        this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -117,21 +112,19 @@ public class PasswordResetService {
     private void sendEmail(String email, String firstName, String resetLink) {
         try {
             logger.info("Attempting to send password reset email to: {}", email);
-            logger.info("Using SMTP from address: {}", fromEmail);
             
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(email);
-            message.setSubject("Password Reset Request - Wildcats Lounge");
-            message.setText("Hi " + firstName + ",\n\n" +
-                    "We received a request to reset your password. Click the link below to set a new password:\n\n" +
-                    resetLink + "\n\n" +
-                    "This link will expire in " + tokenExpirationMinutes + " minutes.\n\n" +
-                    "If you didn't request this, please ignore this email.\n\n" +
-                    "Best regards,\n" +
-                    "Wildcats Lounge Team");
+            String subject = "Password Reset Request - Wildcats Lounge";
+            String htmlContent = "<html><body>" +
+                    "<p>Hi " + firstName + ",</p>" +
+                    "<p>We received a request to reset your password. Click the link below to set a new password:</p>" +
+                    "<p><a href=\"" + resetLink + "\">Reset Password</a></p>" +
+                    "<p>Or copy and paste this link: " + resetLink + "</p>" +
+                    "<p>This link will expire in " + tokenExpirationMinutes + " minutes.</p>" +
+                    "<p>If you didn't request this, please ignore this email.</p>" +
+                    "<p>Best regards,<br/>Wildcats Lounge Team</p>" +
+                    "</body></html>";
             
-            mailSender.send(message);
+            emailService.sendEmail(email, subject, htmlContent);
             logger.info("Password reset email sent successfully to: {}", email);
         } catch (Exception e) {
             logger.error("Failed to send password reset email to {}: {}", email, e.getMessage(), e);
