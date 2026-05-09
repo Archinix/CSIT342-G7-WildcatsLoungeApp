@@ -1,15 +1,16 @@
 package com.sysintegg7.abatayo.wildcatslounge.auth;
 
-import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
-import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-import java.util.Optional;
+import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterEntity;
+import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository;
 
 @Service
 public class PasswordResetService {
@@ -35,6 +36,9 @@ public class PasswordResetService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     public boolean sendPasswordResetEmail(String email) {
         Optional<RegisterEntity> userOpt = registerRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -55,7 +59,7 @@ public class PasswordResetService {
 
         tokenRepository.save(resetToken);
 
-        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        String resetLink = frontendUrl + "/reset-password?token=" + token;
         sendEmail(email, user.getFirstName(), resetLink);
 
         return true;
