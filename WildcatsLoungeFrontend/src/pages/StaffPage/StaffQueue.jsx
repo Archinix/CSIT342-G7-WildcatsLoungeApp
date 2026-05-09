@@ -10,11 +10,11 @@ export default function StaffQueue() {
   const [error, setError] = useState(null)
   const { notifications } = useOrderNotifications()
 
-  const fetchQueue = async (isBackground = false) => {
+  const fetchQueue = async (isBackground = false, forceRefresh = false) => {
     if (!isBackground) setLoading(true)
     if (!isBackground) setError(null)
     try {
-      const data = await apiGetCached('/orders/staff/queue', { forceRefresh: true })
+      const data = await apiGetCached('/orders/staff/queue', { forceRefresh })
       setOrders(data || [])
     } catch (err) {
       if (!isBackground) setError(err.message || 'Failed to load queue')
@@ -24,15 +24,15 @@ export default function StaffQueue() {
     }
   }
 
-  // Initial load
+  // Initial load - use cache
   useEffect(() => {
     fetchQueue()
   }, [])
 
-  // Refresh when new order notification arrives
+  // Refresh when new order notification arrives - force refresh
   useEffect(() => {
     if (notifications && notifications.length > 0) {
-      fetchQueue(true)
+      fetchQueue(true, true)
     }
   }, [notifications])
 
@@ -46,7 +46,8 @@ export default function StaffQueue() {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
       })
-      await fetchQueue()
+      // Force refresh immediately to reflect status change
+      await fetchQueue(false, true)
     } catch (err) {
       setError(err.message || `Failed to update to ${newStatus}`)
       console.error('Update error:', err)
