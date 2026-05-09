@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { apiGetCached, apiCall } from '../../utils/api'
+import { OrderNotificationsContext } from '../../context/OrderNotificationsContext'
 import AppShell from '../../components/AppShell'
 import './StaffQueue.css'
 
@@ -7,26 +8,33 @@ export default function StaffQueue() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { notifications } = useContext(OrderNotificationsContext) || { notifications: [] }
 
-  const fetchQueue = async () => {
-    setLoading(true)
-    setError(null)
+  const fetchQueue = async (isBackground = false) => {
+    if (!isBackground) setLoading(true)
+    if (!isBackground) setError(null)
     try {
       const data = await apiGetCached('/orders/staff/queue', { forceRefresh: true })
       setOrders(data || [])
     } catch (err) {
-      setError(err.message || 'Failed to load queue')
+      if (!isBackground) setError(err.message || 'Failed to load queue')
       console.error('Queue fetch error:', err)
     } finally {
-      setLoading(false)
+      if (!isBackground) setLoading(false)
     }
   }
 
+  // Initial load
   useEffect(() => {
     fetchQueue()
-    const interval = setInterval(fetchQueue, 5000)
-    return () => clearInterval(interval)
   }, [])
+
+  // Refresh when new order notification arrives
+  useEffect(() => {
+    if (notifications && notifications.length > 0) {
+      fetchQueue(true)
+    }
+  }, [notifications])
 
   const updateStatus = async (orderId, newStatus) => {
     if (!orderId) {
