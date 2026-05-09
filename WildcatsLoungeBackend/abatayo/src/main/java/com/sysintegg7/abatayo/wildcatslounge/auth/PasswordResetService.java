@@ -27,7 +27,7 @@ public class PasswordResetService {
     @Value("${app.password-reset.token-expiration-minutes:30}")
     private long tokenExpirationMinutes;
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.from-address:noreply@wildcatslounge.com}")
     private String fromEmail;
 
     @Value("${app.frontend.url:http://localhost:5173}")
