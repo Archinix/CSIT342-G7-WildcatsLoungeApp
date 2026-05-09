@@ -3,6 +3,8 @@ package com.sysintegg7.abatayo.wildcatslounge.auth;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -15,6 +17,8 @@ import com.sysintegg7.abatayo.wildcatslounge.RegistrationPage.RegisterRepository
 @Service
 public class PasswordResetService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PasswordResetService.class);
+
     private final PasswordResetTokenRepository tokenRepository;
     private final RegisterRepository registerRepository;
     private final JavaMailSender mailSender;
@@ -26,6 +30,9 @@ public class PasswordResetService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     public PasswordResetService(PasswordResetTokenRepository tokenRepository,
                               RegisterRepository registerRepository,
                               JavaMailSender mailSender,
@@ -35,9 +42,6 @@ public class PasswordResetService {
         this.mailSender = mailSender;
         this.passwordEncoder = passwordEncoder;
     }
-
-    @Value("${app.frontend.url:http://localhost:5173}")
-    private String frontendUrl;
 
     public boolean sendPasswordResetEmail(String email) {
         Optional<RegisterEntity> userOpt = registerRepository.findByEmail(email);
@@ -110,6 +114,9 @@ public class PasswordResetService {
 
     private void sendEmail(String email, String firstName, String resetLink) {
         try {
+            logger.info("Attempting to send password reset email to: {}", email);
+            logger.info("Using SMTP from address: {}", fromEmail);
+            
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(email);
@@ -121,9 +128,11 @@ public class PasswordResetService {
                     "If you didn't request this, please ignore this email.\n\n" +
                     "Best regards,\n" +
                     "Wildcats Lounge Team");
+            
             mailSender.send(message);
+            logger.info("Password reset email sent successfully to: {}", email);
         } catch (Exception e) {
-            System.err.println("Failed to send password reset email: " + e.getMessage());
+            logger.error("Failed to send password reset email to {}: {}", email, e.getMessage(), e);
         }
     }
 }
